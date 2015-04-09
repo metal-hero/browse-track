@@ -9,8 +9,10 @@ Stat =
   data: {}
   cur: null
 
-if localStorage.getItem("browse-track")!=null
-  Stat.data = localStorage.getItem("browse-track")
+if localStorage.getItem("browse-track")
+  Stat.data = JSON.parse(localStorage.getItem("browse-track"))
+  # alert(JSON.stringify(Stat.data))
+
 
 tabChanged = (url) ->
   if Stat.cur
@@ -37,13 +39,13 @@ calc = (url)->
 
 updateBadge = (url)->
   res = calc url
-  localStorage.setItem("browse-track", Stat.data)
+  localStorage.setItem("browse-track", JSON.stringify(Stat.data))
   chrome.browserAction.setBadgeText({text: res})
 
 urlCheck = (url)->
   a = document.createElement 'a'
   a.href = url 
-  if a.protocol == 'http' or a.protocol == 'https'
+  if a.protocol == 'http:' or a.protocol == 'https:'
     return true
   else 
     return false
@@ -56,7 +58,10 @@ url2domain = (url)->
 chrome.tabs.onActivated.addListener (activeInfo)->
   console.log "Select #{activeInfo.tabId} "
   Stat.curTabId = activeInfo.tabId
+  # alert(activeInfo.tabId)
   chrome.tabs.get activeInfo.tabId, (tab) ->
+    if not urlCheck tab.url
+        return 
     domain = url2domain tab.url
     tabChanged(domain) if domain
     updateBadge domain
