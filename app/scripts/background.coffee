@@ -27,12 +27,22 @@ calc = (url)->
   for i in [0..n]
     if lst[2 * i + 1] and lst[2 * i]
       res += lst[2 * i + 1].getTime() - lst[2 * i].getTime()
-  res += (new Date()).getTime() - lst[lst.length - 1].getTime()
-  return res
+  hh = Math.floor(res / 3600000)
+  mm = Math.floor((res % 3600000) / 60000)
+  ss = Math.floor((res % 60000) / 1000)
+  return hh + ":" + mm + ":" + ss 
 
 updateBadge = (url)->
   res = calc url
-  chrome.browserAction.setBadgeText({text: "#{res / 1000}"})
+  chrome.browserAction.setBadgeText({text: res})
+
+urlCheck = (url)->
+  a = document.createElement 'a'
+  a.href = url 
+  if a.protocol == 'http' or a.protocol == 'https'
+    return true
+  else 
+    return false
 
 
 chrome.tabs.onActivated.addListener (activeInfo)->
@@ -49,8 +59,12 @@ chrome.alarms.onAlarm.addListener (alarm)->
       return
     chrome.tabs.get Stat.curTabId, (tab)->
       console.log tab
+      if not urlCheck teb.url
+        return 
       if tab.url
-        updateBadge tab.url
+        a = document.createElement 'a'
+        a.href = tab.url        
+        updateBadge a.hostname
 
 chrome.alarms.create("update", {periodInMinutes: 0.1})
 console.log('\'Allo \'Allo! Event Page for Browser Action')
