@@ -3,11 +3,14 @@
 chrome.runtime.onInstalled.addListener (details) ->
   console.log('previousVersion', details.previousVersion)
 
-chrome.browserAction.setBadgeText({text: '+15'})
+chrome.browserAction.setBadgeText({text: '00:00:00'})
 
 Stat =
   data: {}
   cur: null
+
+if localStorage.getItem("browse-track")!=null
+  Stat.data = localStorage.getItem("browse-track")
 
 tabChanged = (url) ->
   if Stat.cur
@@ -34,6 +37,7 @@ calc = (url)->
 
 updateBadge = (url)->
   res = calc url
+  localStorage.setItem("browse-track", Stat.data)
   chrome.browserAction.setBadgeText({text: res})
 
 urlCheck = (url)->
@@ -44,13 +48,18 @@ urlCheck = (url)->
   else 
     return false
 
+url2domain = (url)->
+  a = document.createElement 'a'
+  a.href = url 
+  return a.hostname
 
 chrome.tabs.onActivated.addListener (activeInfo)->
   console.log "Select #{activeInfo.tabId} "
   Stat.curTabId = activeInfo.tabId
   chrome.tabs.get activeInfo.tabId, (tab) ->
-    tabChanged(tab.url) if tab.url
-    updateBadge tab.url
+    domain = url2domain tab.url
+    tabChanged(domain) if domain
+    updateBadge domain
 
 chrome.alarms.onAlarm.addListener (alarm)->
   console.log alarm, Stat.curTabId
@@ -59,12 +68,11 @@ chrome.alarms.onAlarm.addListener (alarm)->
       return
     chrome.tabs.get Stat.curTabId, (tab)->
       console.log tab
-      if not urlCheck teb.url
+      if not urlCheck tab.url
         return 
       if tab.url
-        a = document.createElement 'a'
-        a.href = tab.url        
-        updateBadge a.hostname
+        domain = url2domain tab.url       
+        updateBadge domain
 
-chrome.alarms.create("update", {periodInMinutes: 0.1})
+chrome.alarms.create("update", {periodInMinutes: 0.02})
 console.log('\'Allo \'Allo! Event Page for Browser Action')
